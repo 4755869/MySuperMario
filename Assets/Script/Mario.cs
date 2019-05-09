@@ -11,7 +11,7 @@ public class Mario : MonoBehaviour
     public float jumpPower = 20;    //跳跃速度
 
     public float ReboundSpeed = 10; //反弹速度
-    public float ReboundTime = 0.05f; //反弹延时时间
+    public float ReboundTime = 0.015f; //反弹延时时间
 
     public int state=0;            //玛丽奥状态标识
 
@@ -38,6 +38,7 @@ public class Mario : MonoBehaviour
         Vector3 force = Vector3.right * h;
 
         isOnGround = CheckGroundAndEnemy();                               //每一帧做着陆检测
+        CheckHurt();
      
 
         //*******************************简单移动控制*****************************************
@@ -67,7 +68,7 @@ public class Mario : MonoBehaviour
         //**********************************其他移动与动画转换控制***********************************************
 
 
-        if (isOnGround)
+        if (isOnGround)  //如果角色在地面
         {
             anim.SetBool("onGround",true);
             body.gravityScale = 1;   //在地面重力为1
@@ -96,7 +97,7 @@ public class Mario : MonoBehaviour
             }
 
         }
-        else
+        else  //如果角色在空中
         {
             anim.SetBool("onGround",false);
             body.gravityScale = 5;  //在空中重力为5
@@ -167,67 +168,31 @@ public class Mario : MonoBehaviour
     {
         bool result=false;
         Physics2D.queriesStartInColliders = false;  //检测时关闭检测，防止检测到自己碰撞体
+        Transform[] hitTrans;
 
+        //因重心在底部，起点应设为重心向上的1/2高度处，                                              收窄偏移量，只取整宽度                                                               向下多预留0.05位置，增加踩踏的灵敏度
+        result = ThreeLineCast(transform.position + (Vector3.up * transform.localScale.y / 2), Vector3.right * transform.localScale.x / 2, Vector3.down, (transform.localScale.y / 2) + 0.05f, out hitTrans);//发射三条向下射线检测
 
-
-        //bool frontHasGround =( Physics2D.Raycast(transform.position + Vector3.right * 0.5f, Vector3.down, 0.55f).transform!=null);        //前射线
-        //Debug.DrawLine(transform.position + Vector3.right * 0.5f, transform.position + Vector3.right * 0.5f + Vector3.down * 0.55f,Color.red);
-        Transform frontTran = Physics2D.Raycast(transform.position + Vector3.up * (transform.localScale.y / 2) + Vector3.right * 0.5f, Vector3.down, 0.55f).transform;        //前射线
-        bool frontHasThing = (frontTran != null);
-        Debug.DrawLine(transform.position + Vector3.up * (transform.localScale.y / 2) + Vector3.right * 0.5f, transform.position + Vector3.up * (transform.localScale.y / 2) + Vector3.right * 0.5f + Vector3.down * 0.55f,Color.red);
-
-        if (frontTran)//假如返回的transform有Enemies组件，即为敌人。
+        for(int i = 0; i < 3; i++)         //碰撞类型检测
         {
-            if (frontTran.GetComponent<Enemies>() != null)
+            if (hitTrans[i])
             {
-                frontTran.GetComponent<Enemies>().OnHit();
-                Invoke("Rebound", ReboundTime);
+                Enemies enemies = hitTrans[i].GetComponent<Enemies>();
+                if (enemies)                     //如果存在Enemies组件，则为Enemise类型，需要调用Rebound（）弹跳角色
+                {
+                    enemies.OnHit();
+                    Invoke("Rebound",ReboundTime);
+                }
             }
         }
 
-
-        // bool minHasGround =( Physics2D.Raycast(transform.position, Vector3.down,0.55f).transform!=null);                                 //中
-        // Debug.DrawLine(transform.position, transform.position + Vector3.down * 0.55f, Color.red);
-        Transform minTran = Physics2D.Raycast(transform.position + Vector3.up * (transform.localScale.y / 2), Vector3.down, 0.55f).transform;                               //中
-        bool minHasThing = (minTran != null);
-        Debug.DrawLine(transform.position + Vector3.up * (transform.localScale.y / 2), transform.position + Vector3.up * (transform.localScale.y / 2) + Vector3.down * 0.55f, Color.red);
-
-        if (minTran)//假如返回的transform有Enemies组件，即为敌人。
-        {
-            if (minTran.GetComponent<Enemies>() != null)    
-            {
-                minTran.GetComponent<Enemies>().OnHit();
-                Invoke("Rebound",ReboundTime);
-            }
-        }
-
-        //bool backHasGround =( Physics2D.Raycast(transform.position - Vector3.right * 0.5f, Vector3.down,0.55f).transform!=null);           //后
-        //Debug.DrawLine(transform.position-Vector3.right*0.5f,transform.position - Vector3.right * 0.5f + Vector3.down * 0.55f, Color.red);
-        Transform backTran = Physics2D.Raycast(transform.position + Vector3.up * (transform.localScale.y / 2) - Vector3.right * 0.5f, Vector3.down, 0.55f).transform;           //后
-        bool backHasThing = (backTran != null);
-        Debug.DrawLine(transform.position + Vector3.up * (transform.localScale.y / 2) - Vector3.right * 0.5f, transform.position + Vector3.up * (transform.localScale.y / 2) - Vector3.right * 0.5f + Vector3.down * 0.55f, Color.red);
-
-        if (backTran)//假如返回的transform有Enemies组件，即为敌人。
-        {
-            if (backTran.GetComponent<Enemies>() != null)
-            {
-                backTran.GetComponent<Enemies>().OnHit();
-                Invoke("Rebound", ReboundTime);
-            }
-        }
-
-
-
-
-        if (frontHasThing || minHasThing || backHasThing)
-        {
-            result=true;
-        }
 
         Physics2D.queriesStartInColliders = true; //重新开启
 
         return result;
     }
+
+
 
     //-------踩踏反弹
     void Rebound()
@@ -236,4 +201,49 @@ public class Mario : MonoBehaviour
     }
 
 
+
+    //-------上左右方的伤害检测
+
+    public bool CheckHurt()                                          //CheckHurt总方法，调用下方重载的CheckHurt()
+    {
+        //              高度偏移量，取100%高度,注意偏移参数offset的方向为up                 向右少预留0.05位置，减少角色被伤害可能性
+        bool rightCheck = CheckHurt(1f * Vector3.up * transform.localScale.y / 2, Vector3.right, (transform.localScale.x / 2) - 0.05f);
+        bool leftCheck = CheckHurt(1f * Vector3.up * transform.localScale.y / 2, Vector3.left, (transform.localScale.x / 2) - 0.05f);
+        bool upCheck = CheckHurt(0.8f * Vector3.right * transform.localScale.x / 2, Vector3.up, (transform.localScale.y / 2) - 0.05f);
+
+        return rightCheck||leftCheck||upCheck;
+    }
+
+
+
+    public bool CheckHurt(Vector3 offset,Vector3 direction,float distance)  //核心逻辑
+    {
+        bool result = false;
+        Physics2D.queriesStartInColliders = false;  //检测时关闭检测，防止检测到自己碰撞体
+        Transform[] hitTrans;
+
+
+        //             因角色重心在底部，起点从transform.position + (Vector3.up * transform.localScale.y / 2)处开始
+        result = ThreeLineCast(transform.position + (Vector3.up * transform.localScale.y / 2), offset, direction, distance, out hitTrans);//发射三条向下射线检测
+
+
+        for (int i = 0; i < 3; i++)         //碰撞类型检测
+        {
+            if (hitTrans[i])
+            {
+                Debug.Log("hit");
+                Enemies enemies = hitTrans[i].GetComponent<Enemies>();
+                if (enemies)                     //如果存在Enemies组件，则为Enemise类型，需要调用。。。
+                {
+                    Debug.Log("Mario onHit");
+                }
+            }
+        }
+
+        Physics2D.queriesStartInColliders = true; //重新开启
+
+        return result;
+    }
+
+     
 }

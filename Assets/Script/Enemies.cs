@@ -8,6 +8,8 @@ public class Enemies : MonoBehaviour
     private Collider2D coll;
     private Rigidbody2D body;
 
+    public AudioClip hitSound;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -27,10 +29,11 @@ public class Enemies : MonoBehaviour
 
     public void OnHit()
     {
-        anim.SetTrigger("hit");
-        coll.enabled = false;
-        body.isKinematic = true;
-        Destroy(this.gameObject,1f);
+       anim.SetTrigger("hit");
+       AudioSource.PlayClipAtPoint(hitSound,transform.position);
+       coll.enabled = false;
+       body.isKinematic = true;
+       Destroy(this.gameObject,1f);
     }
 
     //---------------------------------------------------------------------

@@ -393,6 +393,16 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: cc2a3dbd96aaeb2499a39ede60849a01, type: 2}
+    - target: {fileID: 6518645605006545386, guid: ad8a91cb97e1d904d9ab52a5731cbc34,
+        type: 3}
+      propertyPath: m_Constraints
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4481568887026298136, guid: ad8a91cb97e1d904d9ab52a5731cbc34,
+        type: 3}
+      propertyPath: hitSound
+      value: 
+      objectReference: {fileID: 8300000, guid: b5c4f3df344d2f34d91512b7cdc77b44, type: 3}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ad8a91cb97e1d904d9ab52a5731cbc34, type: 3}
 --- !u!1 &1011728483
@@ -606,6 +616,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   movePower: 10
   jumpPower: 20
+  ReboundSpeed: 10
+  ReboundTime: 0.05
   state: 0
 --- !u!61 &1484381419
 BoxCollider2D:

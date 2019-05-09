@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Debris : MonoBehaviour
 {
+    //碎石生成器
     private GameObject[] debris = new GameObject[2];
     private float y_minSpeed = 15;
     private float y_maxSpeed = 13;
@@ -31,6 +32,7 @@ public class Debris : MonoBehaviour
 
     void SpawnDbris()
     {
+        //撞击后初始化生成4个碎石
         debris1 = Instantiate(debris[0], transform.position, Quaternion.identity);
         debris1.GetComponent<Rigidbody2D>().velocity = new Vector2(x_speed,y_minSpeed );
 

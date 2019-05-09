@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Treasure :Block
+public class Treasure :Block       //继承父类检测下方碰撞的方法
 {
     private int hitCount=3;         //撞击计数器
     public AudioClip hitSound;
