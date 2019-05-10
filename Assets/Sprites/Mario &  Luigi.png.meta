@@ -26,6 +26,7 @@ TextureImporter:
     21300042: Mario &  Luigi_21
     21300044: Mario &  Luigi_22
     21300046: Mario &  Luigi_23
+    21300048: Mario_die
   externalObjects: {}
   serializedVersion: 9
   mipmaps:
@@ -461,7 +462,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Mario_6
+      name: Mario_die
       rect:
         serializedVersion: 2
         x: 182
@@ -475,7 +476,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 86a7703d522d4544f8ed27197c85d7cc
+      spriteID: f339aea33ea502940bd83aafd6cd0437
       vertices: []
       indices: 
       edges: []
