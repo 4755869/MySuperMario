@@ -24,6 +24,7 @@ public class Mario : MonoBehaviour
 
     private Rigidbody2D body;       //声明本刚体组件
     private Animator anim;          //声明动画机组件
+    public RuntimeAnimatorController[] marioControllers;  //用于替换动画控制器animatorControll，以便做状态切换效果
     public AudioClip dieSound;      //声明死亡音频组件
     public Collider2D coll;         //声明碰撞体组件
 
@@ -65,6 +66,16 @@ public class Mario : MonoBehaviour
                 Camera.main.GetComponent<AudioSource>().loop = false;
                 Camera.main.GetComponent<AudioSource>().Play();
                 Invoke("DieFall", 0.1f);
+            }
+            //----------------------------------------------------------------------------------
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                ChangeState(MARIO_SMALL);
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                ChangeState(MARIO_BIG);
             }
 
 
@@ -207,7 +218,7 @@ public class Mario : MonoBehaviour
         Physics2D.queriesStartInColliders = false;  //检测时关闭检测，防止检测到自己碰撞体
         Transform[] hitTrans;
 
-        //因重心在底部，起点应设为，               只取整宽度，bounds.extents为碰撞体边界一半              向下多预留0.05位置，增加踩踏的灵敏度
+        //因重心在底部，起点应设为，                取整宽度，bounds.extents为碰撞体边界一半              向下多预留0.05位置，增加踩踏的灵敏度
         result = ThreeLineCast(coll.bounds.center, Vector3.right * coll.bounds.extents.x, Vector3.down, coll.bounds.extents.y + 0.05f, out hitTrans);//发射三条向下射线检测
 
         for (int i = 0; i < 3; i++)         //碰撞类型检测
@@ -246,7 +257,7 @@ public class Mario : MonoBehaviour
         //              高度偏移量，取100%高度,注意偏移参数offset的方向为up               向右少预留0.05位置，减少角色被伤害可能性
         bool rightCheck = CheckHurt(1f * Vector3.up * coll.bounds.extents.y, Vector3.right, coll.bounds.extents.x - 0.05f);
         bool leftCheck = CheckHurt(1f * Vector3.up * coll.bounds.extents.y, Vector3.left, coll.bounds.extents.x - 0.05f);
-        bool upCheck = CheckHurt(0.8f*Vector3.right*coll.bounds.extents.x,Vector3.up,coll.bounds.extents.y);
+        bool upCheck = CheckHurt(1f*Vector3.right*coll.bounds.extents.x,Vector3.up,coll.bounds.extents.y);
 
         return rightCheck || leftCheck || upCheck;
     }
@@ -295,5 +306,29 @@ public class Mario : MonoBehaviour
         GetComponent<Collider2D>().enabled = false;
     }
 
+
+    //----------状态改变
+    void ChangeState(int newState)
+    {
+        float height = 1;
+        switch (newState)
+        {
+            case MARIO_SMALL:
+                height = 1;
+                break;
+            case MARIO_BIG:
+                height = 2;
+                break;
+            case MARIO_FIRE:
+                height = 2;
+                break;
+            default:
+                break;
+        }
+
+        (coll as BoxCollider2D).size = new Vector2((coll as BoxCollider2D).size.x, height);
+        (coll as BoxCollider2D).offset = new Vector2(0, height/2);
+        anim.runtimeAnimatorController = marioControllers[newState];
+    }
 
 }
