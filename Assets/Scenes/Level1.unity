@@ -121,6 +121,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 446025966}
+  - component: {fileID: 446025965}
   m_Layer: 0
   m_Name: GameController
   m_TagString: Untagged
@@ -128,6 +129,18 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &446025965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 446025964}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07a35bcbacae44349be0ca07bdadfb05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &446025966
 Transform:
   m_ObjectHideFlags: 0
@@ -625,6 +638,21 @@ MonoBehaviour:
   - {fileID: 0}
   dieSound: {fileID: 8300000, guid: db630699e3f3c9549abb33ac652d4abf, type: 3}
   coll: {fileID: 0}
+  mario_s:
+  - {fileID: 21300002, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  - {fileID: 21300000, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  - {fileID: 21300006, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  - {fileID: 21300010, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  - {fileID: 21300012, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  - {fileID: 21300016, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  mario_b:
+  - {fileID: 21300050, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  - {fileID: 21300052, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  - {fileID: 21300054, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  - {fileID: 21300056, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  - {fileID: 21300058, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  - {fileID: 21300060, guid: e7a7811aa4993e04e8156e0cd860e5ed, type: 3}
+  mario_f: []
 --- !u!61 &1484381419
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -931,6 +959,14 @@ PrefabInstance:
     - target: {fileID: 1484381418, guid: bb9f2dcf143c91a4887decaafb0c3aa8, type: 3}
       propertyPath: marioControllers.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1484381418, guid: bb9f2dcf143c91a4887decaafb0c3aa8, type: 3}
+      propertyPath: mario_s.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1484381418, guid: bb9f2dcf143c91a4887decaafb0c3aa8, type: 3}
+      propertyPath: mario_b.Array.size
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 1484381419, guid: bb9f2dcf143c91a4887decaafb0c3aa8, type: 3}
       propertyPath: m_Enabled

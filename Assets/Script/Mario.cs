@@ -26,13 +26,26 @@ public class Mario : MonoBehaviour
     private Animator anim;          //声明动画机组件
     public RuntimeAnimatorController[] marioControllers;  //用于替换动画控制器animatorControll，以便做状态切换效果
     public AudioClip dieSound;      //声明死亡音频组件
+    private AudioClip powerupCilp;   //声明升级的音频组件
+    private AudioClip pipeClip;      //声明缩小时的音频组件
     public Collider2D coll;         //声明碰撞体组件
+    private SpriteRenderer spriteRenderer; //声明spriteRenderer组件
 
     private bool isBreaking; //刹车标记
     private bool isOnGround; //着陆标记
     private bool isJumpUp;   //上升标记
     private bool isHurt;      //受伤标记
 
+    private float changeStateBeginTime;    //记录闪烁特效开始时刻
+    private float changeStatePauseTime = 1f;  //闪烁特效时长
+    private bool isChangingState;  //是否处于变换状态，用于闪烁特效
+    private float blinkInterval=0.05f;   //闪烁间隔，用于闪烁特效
+    private float lastBlinkTime;   //记录闪烁时最新的闪烁时刻，用于闪烁特效
+    public Sprite[] mario_s;       //存放小马里奥图片，用于闪烁特效
+    public Sprite[] mario_b;       //存放大马里奥图片，用于闪烁特效
+    public Sprite[] mario_f;        //存放特殊马里奥图片，用于闪烁特效
+    private Sprite oldSprite;       //声明当前spriteRender所存放sprite，用于闪烁特效
+    private int spriteIndex;
 
 
 
@@ -42,41 +55,92 @@ public class Mario : MonoBehaviour
         body = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         coll = GetComponent<Collider2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        powerupCilp = Resources.Load<AudioClip>("Sounds/smb_powerup");
+        pipeClip = Resources.Load<AudioClip>("Sounds/smb_pipe");
     }
 
     // Update is called once per frame
     void Update()
     {
         if (state != MARIO_DIE) 
-        //-------------------------------状态不为死亡，执行以下操作--------------------------------------------------------------------
+   //-------------------------------状态不为死亡，执行以下操作--------------------------------------------------------------------
         {
             float h = Input.GetAxis("Horizontal");                    //模拟摇杆
             float v = Input.GetAxis("Vertical");
             Vector3 force = Vector3.right * h;
 
+
+
+
+
             isOnGround = CheckGroundAndEnemy();                               //每一帧做着陆检测
             isHurt = CheckHurt();                                               //每一帧检测受伤
-            Debug.Log(isHurt);
-
+       
+            //--------------------------受伤检测------------------------------------
             if (isHurt)                                                //假如死亡，改变状态
             {
-               
-                state = MARIO_DIE;
-                Camera.main.GetComponent<AudioSource>().clip = dieSound;
-                Camera.main.GetComponent<AudioSource>().loop = false;
-                Camera.main.GetComponent<AudioSource>().Play();
-                Invoke("DieFall", 0.1f);
-            }
-            //----------------------------------------------------------------------------------
-            if (Input.GetKeyDown(KeyCode.Alpha1))
-            {
-                ChangeState(MARIO_SMALL);
+                if (state == MARIO_SMALL)
+                {
+                    Die();
+                }
+                else
+                {
+                    BeginChangeState(MARIO_SMALL);
+                }
+                
             }
 
-            if (Input.GetKeyDown(KeyCode.Alpha2))
+            //-------------------------变身------------------------------------------
+            if (!isChangingState)
             {
-                ChangeState(MARIO_BIG);
+                if (Input.GetKeyDown(KeyCode.P))
+                {
+                    BeginChangeState(MARIO_BIG);
+                }
+                if (Input.GetKeyDown(KeyCode.O))
+                {
+                    BeginChangeState(MARIO_SMALL);
+                }
             }
+
+
+            //判断，若处于变身状态，就进入闪烁特效的逻辑控制
+            if (isChangingState)
+            {
+                /*该判断用于控制闪烁时长。changeStateBeginTime只会在上方的变身判断调用BeginChange()时赋值一次，变身的开始时间，
+                 * 在之后闪烁期间便不会更新，因为isChangeState为false，不再进入上边的变身判断更新changeStateBeginTime。
+                 * 同时，当开始时间与unscaledTime的差值越来越大，达到1秒时，便退出判断，暂停闪烁*/
+                if (Time.unscaledTime - changeStateBeginTime < changeStatePauseTime)
+                {
+                    /*该判断控制闪烁频率，lastBlinkTime记录上次闪烁的时刻，
+                     * 当秒表的时刻跟上次闪烁时刻（进入该判断的时刻）大于一定值——blinkInterval时，才再次进入闪烁*/
+                    if (Time.unscaledTime - lastBlinkTime > blinkInterval)
+                    {
+                        if (spriteRenderer.sprite == oldSprite)
+                        {
+                            ChangeSprite(state, spriteIndex);
+                        }
+                        else
+                        {
+                            spriteRenderer.sprite = oldSprite;
+                        }
+
+                        lastBlinkTime = Time.unscaledTime;  //本次闪烁结束，将当期秒表时刻设置为最新的闪烁时刻
+                    }
+                    return;
+                }
+
+                else
+                {
+                    Debug.Log("changestate");
+                    ChangeState(state);                  
+                }
+
+
+            }
+           
+
 
 
             //*******************************简单移动控制*****************************************
@@ -84,7 +148,13 @@ public class Mario : MonoBehaviour
             //水平移动
 
             //GetComponent<Rigidbody2D>().velocity = force * movePower; //速度改变位置
-            body.AddForce(force * movePower);  //给一个力控制物体移动
+
+            //Time.Scale大于零时才添加力移动角色，防止GameController类暂停游戏时发生错误
+            if (Time.timeScale > 0)
+            {
+                body.AddForce(force * movePower);  //给一个力控制物体移动
+            }
+
 
             if (h > 0)
             {
@@ -95,10 +165,6 @@ public class Mario : MonoBehaviour
             {
                 transform.rotation = Quaternion.Euler(0, 180, 0);
             }
-
-
-
-            //*******************************\简单移动控制*****************************************
 
 
 
@@ -171,6 +237,8 @@ public class Mario : MonoBehaviour
 
 
     }
+
+
 
 
     //----------------------------------------------------------------------------------------------------------
@@ -255,8 +323,8 @@ public class Mario : MonoBehaviour
     public bool CheckHurt()                                          //CheckHurt总方法，调用下方重载的CheckHurt()
     {
         //              高度偏移量，取100%高度,注意偏移参数offset的方向为up               向右少预留0.05位置，减少角色被伤害可能性
-        bool rightCheck = CheckHurt(1f * Vector3.up * coll.bounds.extents.y, Vector3.right, coll.bounds.extents.x - 0.05f);
-        bool leftCheck = CheckHurt(1f * Vector3.up * coll.bounds.extents.y, Vector3.left, coll.bounds.extents.x - 0.05f);
+        bool rightCheck = CheckHurt(1f * Vector3.up * coll.bounds.extents.y, Vector3.right, coll.bounds.extents.x + 0.05f);
+        bool leftCheck = CheckHurt(1f * Vector3.up * coll.bounds.extents.y, Vector3.left, coll.bounds.extents.x + 0.05f);
         bool upCheck = CheckHurt(1f*Vector3.right*coll.bounds.extents.x,Vector3.up,coll.bounds.extents.y);
 
         return rightCheck || leftCheck || upCheck;
@@ -307,9 +375,71 @@ public class Mario : MonoBehaviour
     }
 
 
-    //----------状态改变
+    //----------状态改变的操作-----------------------------------------------------
+
+    //状态改变时的闪烁动画动画主要逻辑块
+    void BeginChangeState(int newState)
+    {
+        anim.enabled = false;
+
+        changeStateBeginTime = Time.unscaledTime;
+        
+        //播声音
+        if (newState == MARIO_SMALL)
+        {
+            Debug.Log("piperSound");
+            AudioSource.PlayClipAtPoint(pipeClip, Camera.main.transform.position);
+        }
+        else
+        {
+            Debug.Log("powerupSound");
+            AudioSource.PlayClipAtPoint(powerupCilp, Camera.main.transform.position);
+        }
+
+        Time.timeScale = 0;
+        oldSprite = spriteRenderer.sprite;       //记录当前spriteRendeerr的sprite
+        state = newState;
+
+        //获取下标index，用于辅助改变sprites[]数组。即记录当进入闪烁的瞬间马里奥处于哪一个sprite图片中
+        string[] spriteNameSplit = oldSprite.name.Split('_');
+        string spriteNumberString = spriteNameSplit[spriteNameSplit.Length - 1];
+        spriteIndex = int.Parse(spriteNumberString);
+
+        isChangingState = true;                 //标记已经处于变身阶段，进入闪烁特效
+
+
+       
+    }
+
+
+    //用于改变全局变量sprites[]，更改当前的sprite动画组，参与闪烁特效
+    void ChangeSprite(int state,int index)
+    {
+        Sprite[] sprites = mario_s;
+
+        if (state == MARIO_BIG)
+        {
+            sprites = mario_b;
+        }
+
+        if (state == MARIO_FIRE)
+        {
+            sprites = mario_f;
+        }
+
+        spriteRenderer.color = new Color(1, 1, 1, 0.5f);
+        spriteRenderer.sprite = sprites[index];
+
+    }
+
+    //正式完成状态改变，重置碰撞体大小，改变animatorController，不参与闪烁特效
     void ChangeState(int newState)
     {
+        spriteRenderer.color = new Color(1,1,1,1);
+
+        isChangingState = false;
+        Time.timeScale = 1;
+        anim.enabled = true;
         float height = 1;
         switch (newState)
         {
@@ -326,9 +456,20 @@ public class Mario : MonoBehaviour
                 break;
         }
 
-        (coll as BoxCollider2D).size = new Vector2((coll as BoxCollider2D).size.x, height);
-        (coll as BoxCollider2D).offset = new Vector2(0, height/2);
+    (coll as BoxCollider2D).size = new Vector2((coll as BoxCollider2D).size.x, height);
+        (coll as BoxCollider2D).offset = new Vector2(0, height / 2);
         anim.runtimeAnimatorController = marioControllers[newState];
+    }
+
+
+    //---------------------死亡操作------------------------
+    private void Die()
+    {
+        state = MARIO_DIE;
+        Camera.main.GetComponent<AudioSource>().clip = dieSound;
+        Camera.main.GetComponent<AudioSource>().loop = false;
+        Camera.main.GetComponent<AudioSource>().Play();
+        Invoke("DieFall", 0.1f);
     }
 
 }
